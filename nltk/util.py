@@ -15,7 +15,7 @@ import pydoc
 import bisect
 import os
 
-from itertools import islice, chain, combinations
+from itertools import islice, chain, combinations, tee
 from pprint import pprint
 from collections import defaultdict, deque
 from sys import version_info
@@ -30,8 +30,6 @@ from six.moves.urllib.request import (
     ProxyDigestAuthHandler,
     HTTPPasswordMgrWithDefaultRealm,
 )
-from tqdm import tqdm
-from joblib import Parallel, delayed
 
 from nltk.internals import slice_bounds, raise_unorderable_types
 from nltk.collections import *
@@ -828,11 +826,25 @@ def choose(n, k):
 
 
 ######################################################################
+# Iteration utilities
+######################################################################
+
+
+def pairwise(iterable):
+    """s -> (s0,s1), (s1,s2), (s2, s3), ..."""
+    a, b = tee(iterable)
+    next(b, None)
+    return zip(a, b)
+
+######################################################################
 # Parallization.
 ######################################################################
 
 
 def parallelize_preprocess(func, iterator, processes, progress_bar=False):
+    from tqdm import tqdm
+    from joblib import Parallel, delayed
+
     iterator = tqdm(iterator) if progress_bar else iterator
     if processes <= 1:
         return map(func, iterator)
